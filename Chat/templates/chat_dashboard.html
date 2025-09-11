@@ -1,0 +1,191 @@
+{%load static%}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chat Dashboard</title>
+<link rel="stylesheet" href="{% static 'css/chat_dashboard.css' %}">
+</head>
+<body>
+
+<header>
+  <h1>AmiVibe - {{ user.username }}</h1>
+  <div>
+    <a href="/home">Home</a> &nbsp;|&nbsp;
+    <a href="/chat">Refresh</a> &nbsp;|&nbsp;
+    <a href="/logout">Logout</a>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Users list -->
+  <div class="users-list">
+    <h3>Chats</h3>
+    {% if users %}
+      {% for u in users %}
+      <div class="user-card" data-user-id="{{ u.id }}" data-username="{{ u.username }}">
+        {% if u.profile.avatar %}
+          <img src="{{ u.profile.avatar.url }}" class="avatar-img" alt="avatar">
+        {% else %}
+          <div class="avatar-placeholder">{{ u.username|slice:":1"|upper }}</div>
+        {% endif %}
+        <div class="user-info">
+          <div class="user-name">{{ u.username }}</div>
+          <div class="user-email">{{ u.email }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p>No chats yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Chat box -->
+  <div class="chat-box" id="chat-box">
+    <div class="chat-header" id="chat-with">
+      <img id="chat-user-avatar" src="" style="display:none;">
+      <span id="chat-user-name">Select a user to start chatting</span>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <form id="chat-form" class="chat-input" style="display:none;">
+      {% csrf_token %}
+      <input type="text" id="message-input" placeholder="Type a message">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ---- config injected by template ---- */
+  const CURRENT_USER_ID = {{ user.id }};   // numeric
+  /* ------------------------------------ */
+
+  let selectedUserId = null;
+  let ws = null;
+
+  function getRoomName(u1, u2) {
+    const a = Math.min(Number(u1), Number(u2));
+    const b = Math.max(Number(u1), Number(u2));
+    return `chat_${a}_${b}`;
+  }
+
+  function wsProtocol() {
+    return window.location.protocol === "https:" ? "wss" : "ws";
+  }
+
+  // ✅ Final appendMessageToUI with timestamp
+  function appendMessageToUI(msg) {
+    const messagesEl = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.classList.add('chat-message');
+    div.classList.add(Number(msg.sender_id) === Number(CURRENT_USER_ID) ? 'from-me' : 'from-them');
+
+    let formattedTime = "";
+    if (msg.timestamp) {
+      const d = new Date(msg.timestamp);
+      formattedTime = d.toLocaleString(); // e.g. "9/11/2025, 10:42 AM"
+    }
+
+    div.innerHTML = `
+      <div>
+        <span>${msg.content}</span><br>
+        <small style="font-size:0.75rem;color:#111;font-weight: 400;">${formattedTime}</small>
+      </div>
+    `;
+
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function openChat(userId, username, avatarUrl) {
+    selectedUserId = userId;
+    localStorage.setItem("lastSelectedUserId", userId);
+
+    document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
+    const activeCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
+    if (activeCard) activeCard.classList.add('active');
+
+    document.getElementById('chat-user-name').innerText = username;
+    const chatAvatar = document.getElementById('chat-user-avatar');
+    if (avatarUrl) { chatAvatar.src = avatarUrl; chatAvatar.style.display = 'inline-block'; }
+    else { chatAvatar.style.display = 'none'; }
+
+    document.getElementById('chat-form').style.display = 'flex';
+    const messagesEl = document.getElementById('chat-messages');
+    messagesEl.innerHTML = '';
+
+    try {
+      const resp = await fetch(`/chat/history/${userId}/`);
+      if (resp.ok) {
+        const data = await resp.json();
+        const messages = Array.isArray(data) ? data : (data.messages || []);
+        messages.forEach(m => {
+          appendMessageToUI({
+            id: m.id,
+            sender_id: m.sender_id,
+            receiver_id: m.receiver_id,
+            content: m.message || m.content,
+            timestamp: m.timestamp
+          });
+        });
+      }
+    } catch (err) {
+      console.error("History fetch error", err);
+    }
+
+    if (ws) { try { ws.close(); } catch(e){} }
+    const roomName = getRoomName(CURRENT_USER_ID, userId);
+    ws = new WebSocket(`${wsProtocol()}://${window.location.host}/ws/chat/${roomName}/`);
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        appendMessageToUI({
+          id: data.id,
+          sender_id: data.sender_id,
+          receiver_id: data.receiver_id,
+          content: data.message || data.content,
+          timestamp: data.timestamp
+        });
+      } catch (err) {
+        console.error("WS parse error", err);
+      }
+    };
+  }
+
+  document.querySelectorAll('.user-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const uid = card.dataset.userId;
+      const uname = card.dataset.username;
+      const avatarImg = card.querySelector('img');
+      openChat(uid, uname, avatarImg ? avatarImg.src : null);
+    });
+  });
+
+  document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('message-input');
+    const text = input.value.trim();
+    if (ws && text) {
+      ws.send(JSON.stringify({ message: text, receiver_id: Number(selectedUserId) }));
+      input.value = '';
+    }
+  });
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const lastUserId = localStorage.getItem("lastSelectedUserId");
+    if (lastUserId) {
+      const card = document.querySelector(`.user-card[data-user-id="${lastUserId}"]`);
+      if (card) {
+        const uid = card.dataset.userId;
+        const uname = card.dataset.username;
+        const avatarImg = card.querySelector('img');
+        openChat(uid, uname, avatarImg ? avatarImg.src : null);
+      }
+    }
+  });
+
+</script>
+
+</body>
+</html>

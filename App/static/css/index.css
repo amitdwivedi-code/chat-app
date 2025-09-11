@@ -1,0 +1,123 @@
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #51294f, #4a2c5e, #4a2c5e);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 40px auto;
+        }
+
+        .card {
+            background:transparent;
+            padding: 30px 35px;
+            border-radius: 15px;
+            width: 370px;
+            box-shadow: 0 8px 20px rgba(77, 76, 76, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            color: #eee7e7;
+            text-align: center;
+        }
+
+        form p {
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border-bottom: 1px solid #ccc;
+            background-color: transparent;
+            color: aliceblue;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input::placeholder{
+            color: aliceblue;
+        }
+
+        input:focus {
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #20551c;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #649c0a;
+        }
+
+        .toggle-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #abacae;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .toggle-link:hover{
+            color: #667eea;
+        }
+
+        .errorlist {
+            color: red;
+            font-size: 0.9rem;
+            margin: 5px 0;
+            list-style: none;
+            padding: 0;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+         .messages { margin-bottom: 12px; }
+        .msg { padding:10px 12px; border-radius:8px; margin-bottom:8px; font-size:14px; }
+        .msg.error { background:#ffe6e6; color:#b00020; border:1px solid #f5c6cb; }
+        .msg.success { background:#e6ffed; color:#08660b; border:1px solid #b6e1c0; }
+        .msg.info { background:#eef6ff; color:#0b4d86; border:1px solid #cfe8ff; }

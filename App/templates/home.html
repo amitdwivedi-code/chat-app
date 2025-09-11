@@ -1,0 +1,308 @@
+{% load static %}
+{% load dict_extras %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dashboard — Chat App</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+
+</head>
+<body>
+  <header>
+    <h1>AmiVibe- {{user.username}}</h1>
+    <div>
+      <a href="">Friends</a> &nbsp; | &nbsp;
+      <a href="chat">Chat</a> &nbsp; | &nbsp;
+      <a href="home">Refresh</a> &nbsp; | &nbsp;
+      <a href="#" id="notification-btn">
+        Notifications <span id="notification-count"></span> &nbsp; | &nbsp;
+      </a>
+      <a href="logout">Logout</a>
+    </div>
+  </header>
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="msg {% if 'error' in m.tags %}error{% else %}success{% endif %}">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+<div class="dashboard">
+  <!-- Profile -->
+  <div class="card profile-card">
+  <h2 style="margin-top:0;">My Profile - {{request.user.username}}</h2>
+
+  {% if profile %}
+    {% if profile.avatar %}
+      <img src="{{ profile.avatar.url }}" alt="Avatar" width="100" height="100">
+    {% else %}
+      <img src="https://via.placeholder.com/100" alt="No avatar">
+    {% endif %}
+
+    <p>{{ profile.phone }}</p> 
+    <p>{{ request.user.email }}</p>
+    <p>{{ profile.bio }}</p>
+    <p>{{ profile.location }}</p>
+
+    <!-- Toggle Profile Form -->
+    <button id="toggleFormBtn" class="btn-edit">
+      Update Profile
+    </button>
+
+    <!-- Hidden Profile Form -->
+    <form id="profileForm" method="post" enctype="multipart/form-data" style="display:none;margin-top:12px;">
+      {% csrf_token %}
+      {{ profile_form.as_p }}
+      <button type="submit" name="profile_submit" class="btn-save">
+        Save Changes
+      </button>
+    </form>
+  {% else %}
+    <!-- Create Profile -->
+    <h3 style="margin-bottom:14px;">Create your profile</h3>
+    <form method="post" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:14px;">
+      {% csrf_token %}
+      {{ profile_form.as_p }}
+      <button type="submit" name="profile_submit" class="btn-save">
+        Save Profile
+      </button>
+    </form>
+  {% endif %}
+
+  <!-- Post Creation Section -->
+  <h2 style="margin-top:20px;">Create Post</h2>
+  <form method="post" enctype="multipart/form-data" class="post-form">
+    {% csrf_token %}
+    
+    <div class="form-group">
+      <label for="id_title">Title</label>
+      {{ post_form.title }}
+    </div>
+
+    <div class="form-group">
+      <label for="id_content">Content</label>
+      {{ post_form.content }}
+    </div>
+
+    <div class="form-group">
+      <label for="id_image">Upload Image</label>
+      {{ post_form.image }}
+    </div>
+
+    <button type="submit" name="post_submit" class="btn-post">
+      ➕ Post
+    </button>
+  </form>
+</div>
+
+  <!-- Posts -->
+   
+  <div class="card posts-card">
+  <h2 style="margin:0 0 12px;">Posts</h2>
+
+  <div class="posts-container">
+  {% for post in posts %}
+    <div class="post-card">
+      <!-- Post Header -->
+      <div class="post-header">
+        <div>
+          <strong>{{ post.author.username }}</strong>
+        </div>
+        <small>{{ post.created_at|timesince }} ago</small>
+      </div>
+
+      <!-- Post Body -->
+      <h4 class="post-title">{{ post.title }}</h4>
+      <p class="post-content">{{ post.content }}</p>
+
+      {% if post.image %}
+        <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+      {% endif %}
+
+      <!-- Like & Comment Actions -->
+      <div class="post-actions">
+        <button
+        class="btn-like {% if post.is_liked %}liked{% endif %}"
+        data-post="{{ post.id }}"
+        data-like-url="{% url 'like_post' post.id %}"
+        data-liked="{% if post.is_liked %}true{% else %}false{% endif %}">
+        {% if post.is_liked %}
+          👍 <span id="likes-count-{{ post.id }}">{{ post.total_likes }}</span>
+        {% else %}
+          👍 <span id="likes-count-{{ post.id }}">{{ post.total_likes }}</span>
+        {% endif %}
+      </button>
+
+        <button class="btn-comment" onclick="toggleCommentForm({{ post.id }})">
+          💬 <span id="comments-count-{{ post.id }}">{{ post.total_comments }}</span>
+        </button>
+      </div>
+
+    
+      <form id="comment-form-{{ post.id }}" class="comment-form" style="display:none;">
+        {% csrf_token %}
+        <textarea name="text" placeholder="Write a comment..."></textarea>
+        <button type="submit">Post</button>
+      </form>
+
+      <!-- Comment List -->
+      <div class="comments-list" id="comments-list-{{ post.id }}">
+        {# Show only the recent 2 comments #}
+        {% for comment in post.recent_comments %}
+          <div class="comment-item">
+            <strong>{{ comment.user.username }}</strong>: {{ comment.text }}
+            <small>{{ comment.created_at|timesince }} ago</small>
+          </div>
+        {% endfor %}
+
+        {# If there are more comments — render the full list (hidden) and a button #}
+        {% if post.more_comments %}
+          <div id="all-comments-{{ post.id }}" class="all-comments" style="display:none; max-height:220px; overflow-y:auto; margin-top:8px; border-top:1px solid #eef2f7; padding-top:8px;">
+            {% for comment in post.comments_list %}
+              <div class="comment-item">
+                <strong>{{ comment.user.username }}</strong>: {{ comment.text }}
+                <small>{{ comment.created_at|timesince }} ago</small>
+              </div>
+            {% endfor %}
+          </div>
+
+          <button class="btn-see-comments" data-post="{{ post.id }}" style="margin-top:6px; border:none; background:none; color:var(--accent); cursor:pointer;">
+            View more comments ({{ post.comments_list|length }})
+          </button>
+        {% endif %}
+      </div>
+
+
+    </div>
+  {% empty %}
+    <p class="no-posts">No posts yet.</p>
+  {% endfor %}
+</div>
+
+</div>
+
+
+<div id="notification-panel" class="card posts-card" style="display:none; max-height:400px; overflow-y:auto;">
+    <h2>Notifications</h2>
+    <ul id="notification-list">
+        {% if notifications %}
+            {% for n in notifications %}
+                <li>
+                    {{ n }} - <small>{{ n.created_at|timesince }} ago</small>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li>No notifications.</li>
+        {% endif %}
+    </ul>
+</div>
+
+
+
+  <!-- Users + Requests -->
+  <div style="display:flex;flex-direction:column;gap:24px;">
+    <div class="card user-list">
+      <h2 style="margin:0 0 12px 0">All users</h2>
+      <div>
+        {% for u in users %}
+          <div class="user-row">
+            <div class="user-meta">
+              {% if u.profile.avatar %}
+                <img src="{{ u.profile.avatar.url }}" alt="{{ u.username }}" class="avatar" style="width:44px;height:44px;border-radius:8px;object-fit:cover;">
+              {% else %}
+                <div class="avatar">{{ u.username|slice:":1"|upper }}</div>
+              {% endif %}
+              <div>
+                <div class="username">{{ u.username }}</div>
+                <div class="email">{{ u.email }}</div>
+              </div>
+            </div>
+            <div class="actions">
+              {% with req=sent_map|get_item:u.id %}
+                {% if req %}
+                  {% if req.status == 'pending' %}
+                    <span class="badge pending">Request pending</span>
+                  {% elif req.status == 'accepted' %}
+                    <a class="badge accepted" href="/chat">Chat</a>
+                  {% elif req.status == 'declined' %}
+                    <span class="badge declined">Declined</span>
+                  {% endif %}
+                {% else %}
+                  <form method="post" action="{% url 'send_request' u.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-send">Send request</button>
+                  </form>
+                {% endif %}
+              {% endwith %}
+            </div>
+          </div>
+        {% empty %}
+          <p class="small">No other users found.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card requests">
+      <h3 style="margin-top:0;">Incoming requests</h3>
+      {% if incoming_requests %}
+        {% for r in incoming_requests %}
+          <div class="req-item">
+            <div style="display:flex;align-items:center;gap:12px;">
+              {% if r.from_user.profile.avatar %}
+                <img src="{{ r.from_user.profile.avatar.url }}" alt="{{ r.from_user.username }}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;">
+              {% else %}
+                <div class="avatar">{{ r.from_user.username|slice:":1"|upper }}</div>
+              {% endif %}
+              <div>
+                <div><strong>{{ r.from_user.username }}</strong></div>
+                <div class="small">sent {{ r.created_at|timesince }} ago</div>
+              </div>
+            </div>
+            <div>
+              <form method="post" action="{% url 'respond_request' r.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button name="action" value="accept">Accept</button>
+              </form>
+              <form method="post" action="{% url 'respond_request' r.id %}" style="display:inline;margin-left:6px;">
+                {% csrf_token %}
+                <button name="action" value="decline">Decline</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="small">No incoming requests.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+  <script>
+    const toggleBtn = document.getElementById('toggleFormBtn');
+    const profileForm = document.getElementById('profileForm');
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            profileForm.style.display = profileForm.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+</script>
+
+
+
+
+
+
+
+<script src="{%static 'js/like.js'%}"></script>
+<script src="{%static 'js/comment.js'%}"></script>
+<script src="{%static 'js/notification.js'%}"></script>
+
+</body>
+</html>
