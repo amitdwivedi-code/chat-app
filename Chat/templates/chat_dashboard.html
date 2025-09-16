@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Chat Dashboard</title>
 <link rel="stylesheet" href="{% static 'css/chat_dashboard.css' %}">
+
 </head>
 <body>
 
@@ -50,62 +51,255 @@
     <div class="chat-messages" id="chat-messages"></div>
     <form id="chat-form" class="chat-input" style="display:none;">
       {% csrf_token %}
+      <button type="button" id="emoji-btn" style="margin-right:4px;">😊</button>
       <input type="text" id="message-input" placeholder="Type a message">
+      <div class="file-upload-wrapper">
+        <label for="file-input" class="file-upload-label">
+          <span id="file-label-text">📎 Attach</span>
+          <input type="file" id="file-input" accept="image/*,video/*">
+        </label>
+        <span id="selected-file-name"></span>
+      </div>
+
       <button type="submit">Send</button>
     </form>
   </div>
 </div>
 
+<div id="emoji-picker" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:4px; border-radius:6px; max-width:200px; flex-wrap:wrap; z-index:1000;"></div>
+<div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:1000;">
+    <img id="modal-img" src="" style="max-width:90%; max-height:90%; border-radius:6px;">
+</div>
+
+
 <script>
 /* ---- config injected by template ---- */
+  // const CURRENT_USER_ID = {{ user.id }};   // numeric
+  // /* ------------------------------------ */
+
+  // let selectedUserId = null;
+  // let ws = null;
+
+  // function getRoomName(u1, u2) {
+  //   const a = Math.min(Number(u1), Number(u2));
+  //   const b = Math.max(Number(u1), Number(u2));
+  //   return `chat_${a}_${b}`;
+  // }
+
+  // function wsProtocol() {
+  //   return window.location.protocol === "https:" ? "wss" : "ws";
+  // }
+
+  // // ✅ Final appendMessageToUI with timestamp
+  // function appendMessageToUI(msg) {
+  //   const messagesEl = document.getElementById('chat-messages');
+  //   const div = document.createElement('div');
+  //   div.classList.add('chat-message');
+  //   div.classList.add(Number(msg.sender_id) === Number(CURRENT_USER_ID) ? 'from-me' : 'from-them');
+
+  //   let formattedTime = "";
+  //   if (msg.timestamp) {
+  //     const d = new Date(msg.timestamp);
+
+  //     // Format: Sun 09 Jun 10:42 AM
+  //     const options = { weekday: 'short', day: '2-digit', month: 'short' };
+  //     const datePart = d.toLocaleDateString('en-GB', options); 
+  //     const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  //     formattedTime = `${datePart} ${timePart}`;
+  //   }
+
+
+  //   div.innerHTML = `
+  //     <div>
+  //       <span>${msg.content}</span><br>
+  //       <small style="font-size:0.80rem;color:#fff;font-weight: 450;">${formattedTime}</small>
+  //     </div>
+  //   `;
+
+  //   messagesEl.appendChild(div);
+  //   messagesEl.scrollTop = messagesEl.scrollHeight;
+  // }
+
+  // async function openChat(userId, username, avatarUrl) {
+  //   selectedUserId = userId;
+  //   localStorage.setItem("lastSelectedUserId", userId);
+
+  //   document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
+  //   const activeCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
+  //   if (activeCard) activeCard.classList.add('active');
+
+  //   document.getElementById('chat-user-name').innerText = username;
+  //   const chatAvatar = document.getElementById('chat-user-avatar');
+  //   if (avatarUrl) { chatAvatar.src = avatarUrl; chatAvatar.style.display = 'inline-block'; }
+  //   else { chatAvatar.style.display = 'none'; }
+
+  //   document.getElementById('chat-form').style.display = 'flex';
+  //   const messagesEl = document.getElementById('chat-messages');
+  //   messagesEl.innerHTML = '';
+
+  //   try {
+  //     const resp = await fetch(`/chat/history/${userId}/`);
+  //     if (resp.ok) {
+  //       const data = await resp.json();
+  //       const messages = Array.isArray(data) ? data : (data.messages || []);
+  //       messages.forEach(m => {
+  //         appendMessageToUI({
+  //           id: m.id,
+  //           sender_id: m.sender_id,
+  //           receiver_id: m.receiver_id,
+  //           content: m.message || m.content,
+  //           timestamp: m.timestamp
+  //         });
+  //       });
+  //     }
+  //   } catch (err) {
+  //     console.error("History fetch error", err);
+  //   }
+
+  //   if (ws) { try { ws.close(); } catch(e){} }
+  //   const roomName = getRoomName(CURRENT_USER_ID, userId);
+  //   ws = new WebSocket(`${wsProtocol()}://${window.location.host}/ws/chat/${roomName}/`);
+  //   ws.onmessage = (e) => {
+  //     try {
+  //       const data = JSON.parse(e.data);
+  //       appendMessageToUI({
+  //         id: data.id,
+  //         sender_id: data.sender_id,
+  //         receiver_id: data.receiver_id,
+  //         content: data.message || data.content,
+  //         timestamp: data.timestamp
+  //       });
+  //     } catch (err) {
+  //       console.error("WS parse error", err);
+  //     }
+  //   };
+  // }
+
+  // document.querySelectorAll('.user-card').forEach(card => {
+  //   card.addEventListener('click', () => {
+  //     const uid = card.dataset.userId;
+  //     const uname = card.dataset.username;
+  //     const avatarImg = card.querySelector('img');
+  //     openChat(uid, uname, avatarImg ? avatarImg.src : null);
+  //   });
+  // });
+
+  // document.getElementById('chat-form').addEventListener('submit', function(e) {
+  //   e.preventDefault();
+  //   const input = document.getElementById('message-input');
+  //   const text = input.value.trim();
+  //   if (ws && text) {
+  //     ws.send(JSON.stringify({ message: text, receiver_id: Number(selectedUserId) }));
+  //     input.value = '';
+  //   }
+  // });
+
+  // window.addEventListener("DOMContentLoaded", () => {
+  //   const lastUserId = localStorage.getItem("lastSelectedUserId");
+  //   if (lastUserId) {
+  //     const card = document.querySelector(`.user-card[data-user-id="${lastUserId}"]`);
+  //     if (card) {
+  //       const uid = card.dataset.userId;
+  //       const uname = card.dataset.username;
+  //       const avatarImg = card.querySelector('img');
+  //       openChat(uid, uname, avatarImg ? avatarImg.src : null);
+  //     }
+  //   }
+  // });
+
   const CURRENT_USER_ID = {{ user.id }};   // numeric
-  /* ------------------------------------ */
 
-  let selectedUserId = null;
-  let ws = null;
+let selectedUserId = null;
+let ws = null;
 
-  function getRoomName(u1, u2) {
+function getRoomName(u1, u2) {
     const a = Math.min(Number(u1), Number(u2));
     const b = Math.max(Number(u1), Number(u2));
     return `chat_${a}_${b}`;
-  }
+}
 
-  function wsProtocol() {
+function wsProtocol() {
     return window.location.protocol === "https:" ? "wss" : "ws";
-  }
+}
 
-  // ✅ Final appendMessageToUI with timestamp
-  function appendMessageToUI(msg) {
+// Append message to chat UI
+function appendMessageToUI(msg) {
     const messagesEl = document.getElementById('chat-messages');
     const div = document.createElement('div');
-    div.classList.add('chat-message');
-    div.classList.add(Number(msg.sender_id) === Number(CURRENT_USER_ID) ? 'from-me' : 'from-them');
+    div.classList.add('chat-message', Number(msg.sender_id) === Number(CURRENT_USER_ID) ? 'from-me' : 'from-them');
 
+    // Format timestamp
     let formattedTime = "";
     if (msg.timestamp) {
-      const d = new Date(msg.timestamp);
-      formattedTime = d.toLocaleString(); // e.g. "9/11/2025, 10:42 AM"
+        const d = new Date(msg.timestamp);
+        const options = { weekday: 'short', day: '2-digit', month: 'short' };
+        const datePart = d.toLocaleDateString('en-GB', options);
+        const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        formattedTime = `${datePart} ${timePart}`;
+    }
+
+    // Build content
+    let contentHTML = "";
+    if (msg.content) contentHTML += `<p>${msg.content}</p>`;
+
+    // Function to create clickable image
+    function createClickableImage(src) {
+        return `<img src="${src}" class="chat-file clickable-img" style="max-width:200px; border-radius:6px; display:block; margin-top:4px; cursor:pointer;">`;
+    }
+
+    // Use file_url if available
+    if (msg.file_url) {
+        if (msg.file_type.startsWith("image")) {
+            contentHTML += createClickableImage(msg.file_url);
+        } else if (msg.file_type.startsWith("video")) {
+            contentHTML += `<video controls class="chat-file" style="max-width:200px; border-radius:6px; display:block; margin-top:4px;">
+                                <source src="${msg.file_url}" type="${msg.file_type}">
+                            </video>`;
+        }
+    }
+
+    // Handle msg.file_data for newly sent files via WebSocket
+    if (!msg.file_url && msg.file_data) {
+        if (msg.file_type.startsWith("image")) {
+            contentHTML += createClickableImage(msg.file_data);
+        } else if (msg.file_type.startsWith("video")) {
+            contentHTML += `<video controls class="chat-file" style="max-width:200px; border-radius:6px; display:block; margin-top:4px;">
+                                <source src="${msg.file_data}" type="${msg.file_type}">
+                            </video>`;
+        }
     }
 
     div.innerHTML = `
-      <div>
-        <span>${msg.content}</span><br>
-        <small style="font-size:0.75rem;color:#111;font-weight: 400;">${formattedTime}</small>
-      </div>
+        <div>
+            ${contentHTML}
+            <small style="font-size:0.80rem;color:#fff;font-weight: 450;">${formattedTime}</small>
+        </div>
     `;
 
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
 
-  async function openChat(userId, username, avatarUrl) {
+    // Add click event for image to show big
+    div.querySelectorAll('.clickable-img').forEach(img => {
+        img.addEventListener('click', () => {
+            openImageModal(img.src);
+        });
+    });
+}
+
+
+// Open chat with a specific user
+async function openChat(userId, username, avatarUrl) {
     selectedUserId = userId;
     localStorage.setItem("lastSelectedUserId", userId);
 
+    // Highlight selected user
     document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
     const activeCard = document.querySelector(`.user-card[data-user-id="${userId}"]`);
     if (activeCard) activeCard.classList.add('active');
 
+    // Update chat header
     document.getElementById('chat-user-name').innerText = username;
     const chatAvatar = document.getElementById('chat-user-avatar');
     if (avatarUrl) { chatAvatar.src = avatarUrl; chatAvatar.style.display = 'inline-block'; }
@@ -115,75 +309,168 @@
     const messagesEl = document.getElementById('chat-messages');
     messagesEl.innerHTML = '';
 
+    // Fetch chat history
     try {
-      const resp = await fetch(`/chat/history/${userId}/`);
-      if (resp.ok) {
-        const data = await resp.json();
-        const messages = Array.isArray(data) ? data : (data.messages || []);
-        messages.forEach(m => {
-          appendMessageToUI({
-            id: m.id,
-            sender_id: m.sender_id,
-            receiver_id: m.receiver_id,
-            content: m.message || m.content,
-            timestamp: m.timestamp
-          });
-        });
-      }
+        const resp = await fetch(`/chat/history/${userId}/`);
+        if (resp.ok) {
+            const data = await resp.json();
+            const messages = Array.isArray(data) ? data : (data.messages || []);
+            messages.forEach(m => {
+            appendMessageToUI({
+                id: m.id,
+                sender_id: m.sender_id,
+                receiver_id: m.receiver_id,
+                content: m.message || m.content,
+                file_url: m.file_url || null,   // <-- use file_url here
+                file_type: m.file_type || null,
+                timestamp: m.timestamp
+            });
+});
+        }
     } catch (err) {
-      console.error("History fetch error", err);
+        console.error("History fetch error", err);
     }
 
+    // Close previous WS
     if (ws) { try { ws.close(); } catch(e){} }
+
+    // Open WebSocket
     const roomName = getRoomName(CURRENT_USER_ID, userId);
     ws = new WebSocket(`${wsProtocol()}://${window.location.host}/ws/chat/${roomName}/`);
+
     ws.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        appendMessageToUI({
-          id: data.id,
-          sender_id: data.sender_id,
-          receiver_id: data.receiver_id,
-          content: data.message || data.content,
-          timestamp: data.timestamp
-        });
-      } catch (err) {
-        console.error("WS parse error", err);
-      }
+        try {
+            const data = JSON.parse(e.data);
+            appendMessageToUI({
+                id: data.id,
+                sender_id: data.sender_id,
+                receiver_id: data.receiver_id,
+                content: data.message || data.content,
+                file_data: data.file_data || null,
+                file_type: data.file_type || null,
+                timestamp: data.timestamp
+            });
+        } catch (err) {
+            console.error("WS parse error", err);
+        }
     };
-  }
+}
 
-  document.querySelectorAll('.user-card').forEach(card => {
+// User selection
+document.querySelectorAll('.user-card').forEach(card => {
     card.addEventListener('click', () => {
-      const uid = card.dataset.userId;
-      const uname = card.dataset.username;
-      const avatarImg = card.querySelector('img');
-      openChat(uid, uname, avatarImg ? avatarImg.src : null);
-    });
-  });
-
-  document.getElementById('chat-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const input = document.getElementById('message-input');
-    const text = input.value.trim();
-    if (ws && text) {
-      ws.send(JSON.stringify({ message: text, receiver_id: Number(selectedUserId) }));
-      input.value = '';
-    }
-  });
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const lastUserId = localStorage.getItem("lastSelectedUserId");
-    if (lastUserId) {
-      const card = document.querySelector(`.user-card[data-user-id="${lastUserId}"]`);
-      if (card) {
         const uid = card.dataset.userId;
         const uname = card.dataset.username;
         const avatarImg = card.querySelector('img');
         openChat(uid, uname, avatarImg ? avatarImg.src : null);
-      }
+    });
+});
+
+// Chat form submission
+document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('message-input');
+    const fileInput = document.getElementById('file-input');
+
+    const text = input.value.trim();
+    const file = fileInput.files[0];
+
+    if (!text && !file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        const payload = { receiver_id: Number(selectedUserId) };
+        if (text) payload.message = text;
+        if (file) {
+            payload.file_data = reader.result;  // base64 string
+            payload.file_name = file.name;
+            payload.file_type = file.type;
+        }
+        ws.send(JSON.stringify(payload));
+
+        input.value = '';
+        fileInput.value = '';
+    };
+
+    if (file) {
+        reader.readAsDataURL(file);  // convert file to base64
+    } else {
+        ws.send(JSON.stringify({ message: text, receiver_id: Number(selectedUserId) }));
+        input.value = '';
     }
-  });
+});
+
+// Restore last selected user
+window.addEventListener("DOMContentLoaded", () => {
+    const lastUserId = localStorage.getItem("lastSelectedUserId");
+    if (lastUserId) {
+        const card = document.querySelector(`.user-card[data-user-id="${lastUserId}"]`);
+        if (card) {
+            const uid = card.dataset.userId;
+            const uname = card.dataset.username;
+            const avatarImg = card.querySelector('img');
+            openChat(uid, uname, avatarImg ? avatarImg.src : null);
+        }
+    }
+});
+
+const fileInput = document.getElementById('file-input');
+const fileLabelText = document.getElementById('file-label-text');
+const selectedFileName = document.getElementById('selected-file-name');
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        selectedFileName.textContent = file.name;
+    } else {
+        selectedFileName.textContent = '';
+    }
+});
+
+function openImageModal(src) {
+    const modal = document.getElementById('image-modal');
+    const modalImg = document.getElementById('modal-img');
+    modalImg.src = src;
+    modal.style.display = 'flex';
+
+    modal.addEventListener('click', () => {
+        modal.style.display = 'none';
+        modalImg.src = '';
+    });
+}
+
+const emojiBtn = document.getElementById('emoji-btn');
+const emojiPicker = document.getElementById('emoji-picker');
+const messageInput = document.getElementById('message-input');
+
+// Simple emoji list
+const emojis = ["😀","😂","😊","😍","🥰","😎","😢","😭","😡","👍","🙏","🎉","💯","🔥","❤️","💔","🤔","🙌","🤩"];
+
+// Populate emoji picker
+emojis.forEach(e => {
+    const span = document.createElement('span');
+    span.textContent = e;
+    span.style.cursor = 'pointer';
+    span.style.padding = '4px';
+    span.style.fontSize = '1.2rem';
+    span.addEventListener('click', () => {
+        messageInput.value += e;  // insert emoji into text input
+        emojiPicker.style.display = 'none';
+        messageInput.focus();
+    });
+    emojiPicker.appendChild(span);
+});
+
+// Toggle emoji picker
+emojiBtn.addEventListener('click', (e) => {
+    const rect = emojiBtn.getBoundingClientRect();
+    emojiPicker.style.top = rect.bottom + window.scrollY + "px";
+    emojiPicker.style.left = rect.left + window.scrollX + "px";
+    emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'flex' : 'none';
+});
+
+
+
 
 </script>
 

@@ -6,6 +6,7 @@ from App.models import ChatRequest
 from .models import Message
 from django.http import JsonResponse
 from django.db.models import Q
+import mimetypes
 # Create your views here.
 
 @login_required
@@ -36,22 +37,30 @@ def chat_history(request, user_id):
     """
     Return chat history between current user and another user.
     """
-    other_user = other = get_object_or_404(User, id=user_id)
+    other_user = get_object_or_404(User, id=user_id)
     qs = Message.objects.filter(
-        sender__in=[request.user, other],
-        receiver__in=[request.user, other]
+        sender__in=[request.user, other_user],
+        receiver__in=[request.user, other_user]
     ).order_by('timestamp')
 
-    data = [
-        {
+    data = []
+    for m in qs:
+        file_url = m.file.url if m.file else None
+        file_type = None
+        if m.file:
+            # Detect MIME type from file name safely
+            file_type, _ = mimetypes.guess_type(m.file.name)
+
+        data.append({
             'id': m.id,
             'sender_id': m.sender.id,
             'receiver_id': m.receiver.id,
             'message': m.message,
+            'file_url': file_url,
+            'file_type': file_type,
             'timestamp': m.timestamp.isoformat(),
-        } for m in qs
-    ]
-    # return an array (JS handles both array or {messages: [...]})
+        })
+
     return JsonResponse(data, safe=False)
 
 
