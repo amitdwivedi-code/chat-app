@@ -61,9 +61,12 @@ MIDDLEWARE = [
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+        "CONFIG": {
+            "hosts": ["redis-cli --tls -u redis://default:ARZFAAImcDE1Y2ExNGFiODQyODI0MGZkOTdiZjI0NWVhNjE2ZDQwY3AxNTcwMQ@aware-reptile-5701.upstash.io:6379"],
+        },
     },
 }
+
 
 ROOT_URLCONF = 'Project.urls'
 
@@ -143,3 +146,5 @@ MEDIA_URL = "/media/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

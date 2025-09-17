@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: chat-app
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+    startCommand: daphne -b 0.0.0.0 -p $PORT Project.asgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: Project.settings
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: REDIS_URL
+        value: rredis-cli --tls -u redis://default:ARZFAAImcDE1Y2ExNGFiODQyODI0MGZkOTdiZjI0NWVhNjE2ZDQwY3AxNTcwMQ@aware-reptile-5701.upstash.io:6379
