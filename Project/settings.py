@@ -28,6 +28,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+SRF_TRUSTED_ORIGINS = [
+    "https://chat-app-2-tcpc.onrender.com",  # must include scheme
+]
+
 
 # Application definition
 
