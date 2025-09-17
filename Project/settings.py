@@ -66,7 +66,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": ["redis-cli --tls -u redis://default:ARZFAAImcDE1Y2ExNGFiODQyODI0MGZkOTdiZjI0NWVhNjE2ZDQwY3AxNTcwMQ@aware-reptile-5701.upstash.io:6379"],
+            "hosts": ["redis://default:ARZFAAImcDE1Y2ExNGFiODQyODI0MGZkOTdiZjI0NWVhNjE2ZDQwY3AxNTcwMQ@aware-reptile-5701.upstash.io:6379/0"],
         },
     },
 }
