@@ -80,5 +80,44 @@
             document.getElementById("login-form").style.display = (show === "login") ? "block" : "none";
         }
     </script>
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const textElement = document.querySelector(".fun-text");
+    const words = ["Stay", "Connected,", "Stay", "Vibing 🚀"];
+    let index = 0;
+    let showing = true; // true = showing words, false = removing
+    let spans = [];
+
+    // Prepare spans
+    textElement.innerHTML = words.map(w => `<span>${w}</span>`).join(" ");
+    spans = [...textElement.querySelectorAll("span")];
+
+    function animateText() {
+        if (showing) {
+            spans[index].classList.add("show");
+            index++;
+            if (index === spans.length) {
+                showing = false;
+                setTimeout(animateText, 1500); // wait before removing
+                return;
+            }
+        } else {
+            spans[index - 1].classList.remove("show");
+            spans[index - 1].classList.add("hide");
+            index--;
+            if (index === 0) {
+                showing = true;
+                spans.forEach(s => s.classList.remove("hide"));
+                setTimeout(animateText, 800); // wait before starting again
+                return;
+            }
+        }
+        setTimeout(animateText, 700);
+    }
+
+    animateText();
+});
+</script>
+
 </body>
 </html>
