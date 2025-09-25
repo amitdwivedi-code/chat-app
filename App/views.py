@@ -347,3 +347,56 @@ def add_comment(request, post_id):
         "comments_count": post.comments.count(),
     })
 
+@login_required
+def User_Profile(request):
+    user = request.user
+    profile = get_object_or_404(Profile, user=user)
+    posts = Post.objects.filter(author=user).order_by('-created_at')
+
+    # Following = accepted requests where current user is sender
+    following = ChatRequest.objects.filter(
+        from_user=user,
+        status=ChatRequest.STATUS_ACCEPTED
+    ).select_related("to_user")
+
+    # Followers = accepted requests where current user is receiver
+    followers = ChatRequest.objects.filter(
+        to_user=user,
+        status=ChatRequest.STATUS_ACCEPTED
+    ).select_related("from_user")
+
+    context = {
+        'profile': profile,
+        'posts': posts,
+        'followers_count': followers.count(),
+        'following_count': following.count(),
+        'show_profile': True,
+        'show_post_form': True,
+    }
+    return render(request, 'profile.html', context)
+
+@login_required
+def create_post(request):
+    user = request.user
+
+    # Automatically create profile if it doesn't exist
+    profile = get_object_or_404(Profile, user=user)
+
+    if request.method == 'POST':
+        post_form = PostForm(request.POST, request.FILES)
+        if post_form.is_valid():
+            new_post = post_form.save(commit=False)
+            new_post.author = user
+            new_post.save()
+            messages.success(request, "✅ Post created successfully.")
+            return redirect("home")
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        post_form = PostForm()
+
+    context = {
+        "post_form": post_form,
+        "profile": profile
+    }
+    return render(request, 'post.html', context)
