@@ -28,6 +28,8 @@ urlpatterns = [
     path('respond-request/<int:req_id>/', v.respond_request, name='respond_request'),
     path("like/<int:post_id>/", v.like_post, name="like_post"),
     path("comment/<int:post_id>/", v.add_comment, name="add_comment"),
+    path('profile', v.User_Profile, name='user_profile'),
+    path('create_post', v.create_post, name='create_post')
 ]
 
 
