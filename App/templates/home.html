@@ -13,10 +13,18 @@
 <body>
   <header>
     <h1>AmiVibe- {{user.username}}</h1>
-    <div>
-      <a href="">Friends</a> &nbsp; | &nbsp;
-      <a href="chat">Chat</a> &nbsp; | &nbsp;
+    
+    <div class="header-right-section">
+        <a href="profile">
+            {% if profile.avatar %}
+              <img src="{{ profile.avatar.url }}" alt="Avatar" class="mobile-only header-avatar">
+            {% else %}
+              <div class="mobile-only header-avatar-placeholder">{{ user.username|slice:":1"|upper }}</div>
+            {% endif %}
+        </a>
+      <a href="create_post">Post</a> &nbsp; | &nbsp;
       <a href="home">Refresh</a> &nbsp; | &nbsp;
+      <a href="chat">Chat</a> &nbsp; | &nbsp;
       <a href="#" id="notification-btn">
         Notifications <span id="notification-count"></span> &nbsp; | &nbsp;
       </a>
@@ -33,8 +41,9 @@
   {% endif %}
 
 <div class="dashboard">
-  <!-- Profile -->
+  
   <div class="card profile-card">
+    
   <h2 style="margin-top:0;">My Profile - {{request.user.username}}</h2>
 
   {% if profile %}
@@ -49,12 +58,12 @@
     <p>{{ profile.bio }}</p>
     <p>{{ profile.location }}</p>
 
-    <!-- Toggle Profile Form -->
+    
     <button id="toggleFormBtn" class="btn-edit">
       Update Profile
     </button>
 
-    <!-- Hidden Profile Form -->
+   
     <form id="profileForm" method="post" enctype="multipart/form-data" style="display:none;margin-top:12px;">
       {% csrf_token %}
       {{ profile_form.as_p }}
@@ -63,7 +72,7 @@
       </button>
     </form>
   {% else %}
-    <!-- Create Profile -->
+   
     <h3 style="margin-bottom:14px;">Create your profile</h3>
     <form method="post" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:14px;">
       {% csrf_token %}
@@ -74,7 +83,7 @@
     </form>
   {% endif %}
 
-  <!-- Post Creation Section -->
+ 
   <h2 style="margin-top:20px;">Create Post</h2>
   <form method="post" enctype="multipart/form-data" class="post-form">
     {% csrf_token %}
@@ -100,7 +109,7 @@
   </form>
 </div>
 
-  <!-- Posts -->
+  
    
   <div class="card posts-card">
   <h2 style="margin:0 0 12px;">Posts</h2>
@@ -108,7 +117,7 @@
   <div class="posts-container">
   {% for post in posts %}
     <div class="post-card">
-      <!-- Post Header -->
+      
       <div class="post-header">
         <div>
           <strong>{{ post.author.username }}</strong>
@@ -116,7 +125,7 @@
         <small>{{ post.created_at|timesince }} ago</small>
       </div>
 
-      <!-- Post Body -->
+      
       <h4 class="post-title">{{ post.title }}</h4>
       <p class="post-content">{{ post.content }}</p>
 
@@ -124,7 +133,7 @@
         <img src="{{ post.image.url }}" alt="Post image" class="post-image">
       {% endif %}
 
-      <!-- Like & Comment Actions -->
+      
       <div class="post-actions">
         <button
         class="btn-like {% if post.is_liked %}liked{% endif %}"
@@ -150,7 +159,7 @@
         <button type="submit">Post</button>
       </form>
 
-      <!-- Comment List -->
+      
       <div class="comments-list" id="comments-list-{{ post.id }}">
         {# Show only the recent 2 comments #}
         {% for comment in post.recent_comments %}
@@ -204,7 +213,7 @@
 
 
 
-  <!-- Users + Requests -->
+
   <div style="display:flex;flex-direction:column;gap:24px;">
     <div class="card user-list">
       <h2 style="margin:0 0 12px 0">All users</h2>
@@ -300,6 +309,21 @@
 
 
 
+<script>
+   document.addEventListener("DOMContentLoaded", () => {
+  const mobileMenuToggle = document.getElementById("mobile-menu-toggle")
+  const mobileMenuPanel = document.getElementById("mobile-menu-panel")
+
+  if (mobileMenuToggle && mobileMenuPanel) {
+    mobileMenuToggle.addEventListener("click", () => {
+      mobileMenuPanel.classList.toggle("open")
+      mobileMenuToggle.classList.toggle("open") // Optional: for animating the hamburger icon
+    })
+  }
+})
+
+
+</script>
 <script src="{%static 'js/like.js'%}"></script>
 <script src="{%static 'js/comment.js'%}"></script>
 <script src="{%static 'js/notification.js'%}"></script>
