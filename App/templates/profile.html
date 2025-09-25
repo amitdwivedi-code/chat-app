@@ -1,1 +1,73 @@
 
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Card</title>
+ <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+</head>
+<body>
+    <header>
+        
+        <div class="header-right-section">
+        <a href="/profile">Refresh</a> &nbsp; | &nbsp;
+        <a href="/home">Home</a> &nbsp; | &nbsp;
+        <a href="chat">Chat</a> &nbsp; | &nbsp;
+        <a href="logout">Logout</a>
+        </div>
+  </header>
+
+  <div class="insta-profile">
+    <!-- Profile Image -->
+    <div class="profile-pic">
+      {% if profile.avatar %}
+              <img src="{{ profile.avatar.url }}" alt="Avatar" class="mobile-only header-avatar">
+    {% else %}
+              <div class="mobile-only header-avatar-placeholder">{{ user.username|slice:":1"|upper }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Profile Info -->
+    <div class="profile-info">
+      <div class="profile-header" style="text-align: center;">
+        <h2 class="username">{{ user.username|upper }}</h2>
+      </div>
+
+      <div class="profile-stats">
+        <span><strong>{{posts|length}}</strong> posts</span>
+        <span><strong>{{followers_count}}</strong> followers</span>
+        <span><strong>{{following_count}}</strong> following</span>
+      </div>
+
+      <div class="profile-bio">
+        <p><strong>{{profile.bio}}</strong></p>
+        <p>👉 {{profile.phone}} <br>
+           📌 {{profile.location}} <br>
+           📒 {{user.email}} <br>
+        </p>
+      </div>
+
+    </div>
+  </div>
+  <div class="user-posts">
+  <h3>My Posts</h3>
+
+  <div class="posts-grid">
+    {% for p in posts %}
+      <div class="post-card">
+        {% if p.image %}
+          <img src="{{ p.image.url }}" alt="Post image">
+        {% endif %}
+        <p>{{ p.content }}</p>
+        <small>{{ p.created_at|date:"M d, Y H:i" }}</small>
+      </div>
+    {% empty %}
+      <p>You haven't posted anything yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+</body>
+</html>
