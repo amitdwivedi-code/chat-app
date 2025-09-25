@@ -1,1 +1,136 @@
 
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #111;
+}
+
+header a {
+  text-decoration: none;
+  color:  #10b981;
+  font-weight: 500;
+}
+
+
+/* Profile Container */
+.insta-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+}
+
+/* Profile Picture */
+.profile-pic {
+  margin-bottom: 15px;
+}
+
+.profile-pic img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #ddd;
+  object-fit: cover;
+}
+
+.header-avatar-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #0095f6;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: bold;
+}
+
+/* Username */
+.username {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 0 10px;
+}
+
+/* Stats */
+.profile-stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin: 15px 0;
+  font-size: 15px;
+}
+
+.profile-stats strong {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Bio */
+.profile-bio {
+  font-size: 14px;
+  text-align: center;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Posts Section */
+.user-posts {
+  width: 100%;
+  max-width: 900px;
+}
+
+.user-posts h3 {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+/* Posts Grid (Instagram-like) */
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.post-card {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.post-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
