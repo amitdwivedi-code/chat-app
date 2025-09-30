@@ -1,4 +1,3 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -18,7 +17,7 @@
         <a href="logout">Logout</a>
         </div>
   </header>
-
+{% if profile %}
   <div class="insta-profile">
     <!-- Profile Image -->
     <div class="profile-pic">
@@ -68,6 +67,38 @@
     {% endfor %}
   </div>
 </div>
+{% else %}
+<div class="create-profile">
+    <h2>Create Your Profile</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-group">
+            {{ profile_form.avatar.label_tag }}
+            {{ profile_form.avatar }}
+        </div>
+
+        <div class="form-group">
+            {{ profile_form.bio.label_tag }}
+            {{ profile_form.bio }}
+        </div>
+
+        <div class="form-group">
+            {{ profile_form.phone.label_tag }}
+            {{ profile_form.phone }}
+        </div>
+
+        <div class="form-group">
+            {{ profile_form.location.label_tag }}
+            {{ profile_form.location }}
+        </div>
+
+        <button type="submit" name="profile_submit" class="btn-save">
+        Save Profile
+      </button>
+    </form>
+</div>
+{%endif%}
 
 </body>
 </html>
