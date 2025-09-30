@@ -347,10 +347,30 @@ def add_comment(request, post_id):
         "comments_count": post.comments.count(),
     })
 
+
 @login_required
 def User_Profile(request):
     user = request.user
-    profile = get_object_or_404(Profile, user=user)
+    try:
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        profile = None
+
+    # Handle POST request for profile creation/update
+    if request.method == "POST" and "profile_submit" in request.POST:
+        profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+        if profile_form.is_valid():
+            p = profile_form.save(commit=False)
+            p.user = request.user
+            p.save()
+            messages.success(request, "Your profile has been saved.")
+            return redirect("home")
+        else:
+            messages.error(request, "Please correct the errors in the profile form.")
+    else:
+        profile_form = ProfileForm(instance=profile)
+
+    # User posts
     posts = Post.objects.filter(author=user).order_by('-created_at')
 
     # Following = accepted requests where current user is sender
@@ -370,17 +390,25 @@ def User_Profile(request):
         'posts': posts,
         'followers_count': followers.count(),
         'following_count': following.count(),
+        'profile_form': profile_form,  # pass the form to template
         'show_profile': True,
         'show_post_form': True,
     }
+
     return render(request, 'profile.html', context)
+
+
 
 @login_required
 def create_post(request):
     user = request.user
 
-    # Automatically create profile if it doesn't exist
-    profile = get_object_or_404(Profile, user=user)
+    # Check if profile exists
+    try:
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        messages.info(request, "You need to create your profile before posting.")
+        return redirect("create_profile")  # make sure this URL name exists
 
     if request.method == 'POST':
         post_form = PostForm(request.POST, request.FILES)
@@ -388,7 +416,7 @@ def create_post(request):
             new_post = post_form.save(commit=False)
             new_post.author = user
             new_post.save()
-            messages.success(request, "✅ Post created successfully.")
+            messages.success(request, "Post created successfully.")
             return redirect("home")
         else:
             messages.error(request, "Please correct the errors in the form.")
